@@ -110,6 +110,8 @@ gh release create v1.3.0 --target master --generate-notes
 git fetch --tags                          # 把远程新建的 tag 同步回本地
 ```
 
+> 本节与 **git-tutorial.md 第 10 节**互为对照：git 视角讲"怎么立牌（tag）"，gh 视角讲"怎么贴公告（Release）"。
+
 本仓库的真实 Release 列表：
 
 ```
