@@ -20,6 +20,7 @@
 12. [多身份提交（模拟多人协作）](#12-多身份提交模拟多人协作)
 13. [常用命令速查表](#13-常用命令速查表)
 14. [本仓库真实提交历史（案例）](#14-本仓库真实提交历史案例)
+15. [常见误解澄清（FAQ）](#15-常见误解澄清faq)
 
 ---
 
@@ -334,7 +335,7 @@ git push origin v1.0.0               # 推送标签
 ## 14. 本仓库真实提交历史（案例）
 
 ```
-6088da7 (HEAD -> master) Merge branch 'feature/beverages-price-update'  ← 冲突合并（案例二）
+6088da7 Merge branch 'feature/beverages-price-update'  ← 冲突合并（案例二）
 |\
 | * b995473 feat(snacks): 矿泉水调价 1.5 -> 1.8             ← Odysseus 收尾
 | * 2d24040 feat(snacks): 可乐调价 3.0 -> 3.5（WIP 开工）
@@ -384,6 +385,53 @@ d589e56 docs: 初始化仓库，添加 README 与 2026-08-30 商品库存记录 
 曾经的"三条未合并 WIP 分支"已全部收尾合并（多身份接力：Liya2199 开工 →
 Odysseus / Achilles / Athena / Heracles 分别收尾），随后本地与远程分支一并删除，
 仓库回归单主干——这就是分支"用完即弃"的完整生命周期。
+
+注：上图截取至 `6088da7` 前后，此后又叠加了 gh-tutorial 入库与多次教程迭代提交，最新历史以 `git log` 为准。
+
+## 15. 常见误解澄清（FAQ）
+
+**Q1：分支"旧了"就一定会冲突吗？**
+
+不会。冲突的判定只看**同一文件的同一处区域是否被双方都改过**，与分支新旧无关。
+实战工具箱：
+
+```bash
+git merge-base master <分支>                  # 找两分支的共同祖先
+git merge-tree --write-tree master <分支>     # 合并预演：exit 0 干净 / exit 1 有冲突，不改动任何文件
+```
+
+本仓库实例：`feature/war-thunder-jets` 只新增了战雷档案文件，master 侧同期只改了
+`gh-tutorial.md`——文件集合零交集，无论隔多久合并都干净。
+
+**Q2：分支落后主干很多，该怎么办？**
+
+给分支"保鲜"：站在分支上把主干反向合并进来（back-merge）。
+
+```bash
+git switch feature/xxx
+git merge master        # 把主干最新成果同步进分支
+```
+
+分支拖得越久偏差越大：要么将来冲突更猛，要么合并时"惊喜"越多。勤保鲜，或小步快合。
+
+**Q3：删了分支，提交会丢吗？**
+
+不会。**分支只是一个指向提交的指针**（所以建删都是瞬间完成）。只要提交仍被某条
+分支、tag 或远程引用可达，删指针不丢数据；只有彻底无人引用的提交才最终被回收。
+这也是 `git branch -d` 只肯删"已合并分支"的原因——它防止的正是指针删了、提交悬空。
+
+**Q4：`git branch -a` 里的 origin/master 就是远程分支吗？**
+
+准确说是**远程分支的本地影子**（remote-tracking ref）：上次与服务器同步时的快照。
+它不会自动更新——别人在网页上删了远程分支，你本地的影子还留着，用
+`git fetch --prune` 对账清理（见 6.4）。
+
+**Q5：`git pull` 随手用安全吗？**
+
+`git pull` = `git fetch` + `git merge`，直接并进当前分支。单人开发无所谓；
+在多人协作的分支上，更稳妥的习惯是先 `git fetch`，看一眼
+`git log HEAD..origin/master` 确认对方的改动，再手动 merge——
+把"自动合并"升级为"知情合并"。
 
 ---
 
