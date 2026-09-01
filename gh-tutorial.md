@@ -87,7 +87,30 @@ gh pr close 1
 
 ## 5. Release 操作
 
-本仓库当前的真实 Release 列表：
+### ⚠️ 前置依赖：Release 站在 tag 的肩膀上（gh 与 git 的联动点）
+
+**发 Release 之前必须先有 tag**——tag 是路牌，Release 是路牌旁边的公告栏，
+先立牌、再贴公告。实际有两条路：
+
+**路径 A（推荐：git 管打标签，gh 管发公告，流程最清晰）**
+
+```bash
+git tag -a v1.3.0 -m "v1.3.0 说明文字"   # 1. git：本地打附注标签
+git push origin v1.3.0                    # 2. git：标签推上远程（⚠️ 标签不会随 git push 自动上传！）
+gh release create v1.3.0 --notes "..."    # 3. gh：基于这个已存在的 tag 发 Release
+```
+
+**路径 B（gh 一条龙：tag 不存在时它替你建）**
+
+```bash
+gh release create v1.3.0 --target master --generate-notes
+# 本地/远程都没有 v1.3.0 时，gh 会通过 API 在远程自动创建 tag 并指向
+# --target 指定的分支（默认主分支最新提交）
+# ⚠️ 陷阱：这样建的 tag 只存在于远程，本地毫无感知，记得补一刀：
+git fetch --tags                          # 把远程新建的 tag 同步回本地
+```
+
+本仓库的真实 Release 列表：
 
 ```
 v1.2.0	Latest	v1.2.0	2026-09-01T12:32:18Z
