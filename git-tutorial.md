@@ -141,6 +141,19 @@ git merge --no-ff feature/snacks-category    # 强制造合并提交，保留分
 
 团队协作常**强制 --no-ff**，让每个功能在历史上留下清晰足迹。
 
+### 6.4 远程分支的删除与影子清理
+
+```bash
+git branch -d <分支>              # 只删本地（-d 校验已合并；-D 强制，慎用）
+git push origin --delete <分支>   # 删远程分支（可一次写多个分支名）
+git fetch --prune                 # 清理本地缓存的远程分支"影子"(remotes/origin/*)
+```
+
+- `git branch -d` **只删本地**，远程分支必须用 `git push origin --delete` 单独删；
+- `git branch -a` 里 `remotes/origin/` 开头的条目只是本地缓存的快照，不是远程本身；
+- 若是**别人**在 GitHub 网页上删了远程分支，你本地的影子不会自动消失，用 `--prune` 与服务器对账；
+- 实战：本仓库三条 WIP 分支收尾合并后，就是本地、远程一并删除的（见第 14 节）。
+
 ## 7. 远程分支与 Pull Request
 
 **核心事实：`git push` 只上传数据，永远不会自动创建 PR。**
@@ -199,6 +212,14 @@ git add <文件>            # 冲突场景下 add = "本文件已解决"
 git commit --no-edit      # 接受默认合并信息，闭环
 git merge --abort         # 任何时刻反悔：整个合并作废，回到合并前
 ```
+
+**案例二（分支活得太久导致的冲突）**：Odysseus 基于旧版 master 完成了饮料调价分支
+（可乐 3.5），而 master 随后被 Hera 的审计价 3.6 更新——收尾合并时，可乐行、
+合计行、备注区三处同时冲突。裁决：可乐取审计价 3.6（分支上的 3.5 已过时），
+矿泉水取分支上的 1.8（只有分支改了它，是有效新工作），合计融合为 2506.00，
+促销/审计/调价三条备注全部保留。
+
+教训：**分支活得越久，与主干的偏差越大，冲突越猛**——这又给"小步快合"添了一条理由。
 
 防冲突四诀：任务分工不交叉；分支小步快合；勤 `git pull`；大改先沟通。
 
@@ -273,7 +294,8 @@ git push / git pull                  # 推 / 拉
 # 分支
 git switch -c <新分支>               # 建分支并切换
 git merge [--no-ff] <分支>           # 合并
-git branch -d <分支>                 # 删已合并分支
+git branch -d <分支>                 # 删已合并分支（仅本地）
+git push origin --delete <分支>      # 删远程分支
 
 # 撤销
 git restore <文件>                   # 丢弃工作区改动
@@ -289,11 +311,27 @@ git push origin v1.0.0               # 推送标签
 ## 14. 本仓库真实提交历史（案例）
 
 ```
-2bba157 (tag: 无, HEAD -> master) Merge branch 'fix/cola-price-audit'   ← 冲突合并（菱形）
+6088da7 (HEAD -> master) Merge branch 'feature/beverages-price-update'  ← 冲突合并（案例二）
 |\
-| * b86db95 fix(snacks): 审计更正可乐单价 3.0 -> 3.6        ← Hera
-* | 422c7d4 feat(snacks): 可乐促销价 3.0 -> 2.9             ← Hermes
-|/
+| * b995473 feat(snacks): 矿泉水调价 1.5 -> 1.8             ← Odysseus 收尾
+| * 2d24040 feat(snacks): 可乐调价 3.0 -> 3.5（WIP 开工）
+* |   552c076 Merge branch 'feature/gift-box'                ← 干净合并
+|\ \
+| * | 2f29115 docs(giftbox): 完成对账，勾选全部待办          ← Heracles 收尾
+| * | 49b6f74 feat(giftbox): 录入礼盒数据                    ← Athena
+| * | 057306b feat(giftbox): 礼盒骨架（WIP 开工）
+| |/
+* |   d2dc83d Merge branch 'fix/milk-stock-count'            ← 干净合并
+|\ \
+| * | 14ce7ff fix(inventory): 牛奶盘点重算合计               ← Achilles 收尾
+| * | 090ddcd fix(inventory): 牛奶盘点 45 -> 48（WIP 开工）
+| |/
+* | 2c984e1 docs(tutorial): 新增 Git 全流程实战教程          ← 本教程首次入库
+* |   2bba157 Merge branch 'fix/cola-price-audit'            ← 冲突合并（案例一）
+|\ \
+| * | b86db95 fix(snacks): 审计更正可乐单价 3.0 -> 3.6       ← Hera
+* | | 422c7d4 feat(snacks): 可乐促销价 3.0 -> 2.9            ← Hermes
+|/ /
 864d44d Merge branch 'docs/readme-branches'                  ← --no-ff 合并
 |\
 | * 9dc6d3a docs(readme): 补充分支策略说明
@@ -320,11 +358,9 @@ a125166 docs(clothing): 更新衣物库存合计金额                 ← 被�
 d589e56 docs: 初始化仓库，添加 README 与 2026-08-30 商品库存记录   ← 起点
 ```
 
-另有三条未合并的远程分支，可作为"多人并行开发"的活体标本：
-
-- `feature/beverages-price-update`（Liya2199 开工，Odysseus 收尾）
-- `fix/milk-stock-count`（Liya2199 开工，Achilles 收尾）
-- `feature/gift-box`（Liya2199 开工，Athena 收尾）
+曾经的"三条未合并 WIP 分支"已全部收尾合并（多身份接力：Liya2199 开工 →
+Odysseus / Achilles / Athena / Heracles 分别收尾），随后本地与远程分支一并删除，
+仓库回归单主干——这就是分支"用完即弃"的完整生命周期。
 
 ---
 
