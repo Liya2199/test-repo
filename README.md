@@ -10,6 +10,7 @@
 | `clothing-inventory-2026-08-30.md` | 衣物类库存记录：芭蕾舞衣、纱裙、软底芭蕾鞋等 |
 | `snacks-inventory-2026-09-01.md` | 零食饮料类库存记录：薯片、可乐、巧克力等 |
 | `.gitignore` | 忽略日志、临时文件等不需要纳入版本控制的内容 |
+| `git-tutorial.md` | **Git 全流程实战教程**：init → 提交规范 → 分支 → PR → 冲突 → 撤销 → stash → tag |
 
 ## 演示流程
 
