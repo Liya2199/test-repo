@@ -247,9 +247,32 @@ git push origin v1.0.0                        # ⚠️ 标签不会随 push 自�
 
 - 分支是**会移动**的指针，tag 是**钉死**在某提交上的路牌；
   本仓库 `v1.0.0` 钉在 `d2f46b5`，`v1.1.0` 钉在 `6f2dfc4`，永不漂移。
-- **Release** = tag + 发布说明 + 自动源码包，在 GitHub 网页 Releases → Draft a new release 创建；
-  命令行方式：`gh release create v1.0.0 --notes "..."`（需先 `gh auth login`）。
 - 版本命名遵循语义化：修 bug 升 `v1.0.1`，加功能升 `v1.1.0`。
+
+### 发布 Release 的两条路径（gh 与 git 的联动点）
+
+**Release 必须锚定 tag**——tag 是路牌，Release 是路牌旁的公告栏，先立牌、再贴公告。
+
+**路径 A（推荐：git 管打标签，gh 管发公告）**
+
+```bash
+git tag -a v1.3.0 -m "v1.3.0 说明文字"   # ① git：本地打附注标签
+git push origin v1.3.0                    # ② 标签推上远程（⚠️ 不会随 git push 自动上传）
+gh release create v1.3.0 --notes "..."    # ③ gh：往已存在的 tag 上发 Release（需 gh auth login）
+```
+
+第 ③ 步不想用命令行，就去网页 Releases → Draft a new release → 选择已推上去的 tag。
+
+**路径 B（gh 一条龙：tag 不存在时它替你建）**
+
+```bash
+gh release create v1.3.0 --target master --generate-notes
+# 本地/远程都没有 v1.3.0 时，gh 通过 API 在远程自动创建 tag，指向 --target 分支
+# ⚠️ 陷阱：这样建的 tag 只存在于远程，本地毫无感知，记得补一刀：
+git fetch --tags                          # 把远程新建的 tag 同步回本地
+```
+
+> 两条路径的更多细节（附件、--generate-notes、删除 Release 等）见 **gh-tutorial.md 第 5 节**。
 
 ## 11. .gitignore 详解
 
