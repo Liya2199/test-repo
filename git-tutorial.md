@@ -77,6 +77,7 @@ git push -u origin master                                         # 首次推送
 
 - `-u` 建立跟踪关系，之后本地与远程同分支名自动关联，直接 `git push` 即可。
 - 推送成功后 `git status` 显示 `Your branch is up to date with 'origin/master'`。
+- `git fetch` 与 `git pull` 的完整区别对照（流向图 + 对比表 + 三步拳），见第 15 节 FAQ Q5。
 
 ## 4. 日常循环：修改 → diff → 提交
 
@@ -428,12 +429,56 @@ git merge master        # 把主干最新成果同步进分支
 它不会自动更新——别人在网页上删了远程分支，你本地的影子还留着，用
 `git fetch --prune` 对账清理（见 6.4）。
 
-**Q5：`git pull` 随手用安全吗？**
+**Q5：`git fetch` 和 `git pull` 到底有什么区别？**
 
-`git pull` = `git fetch` + `git merge`，直接并进当前分支。单人开发无所谓；
-在多人协作的分支上，更稳妥的习惯是先 `git fetch`，看一眼
-`git log HEAD..origin/master` 确认对方的改动，再手动 merge——
-把"自动合并"升级为"知情合并"。
+一句话点破：**`git pull` 就是 `git fetch` + `git merge` 的二合一快捷键**，
+区别全在"要不要动你的工作区"。
+
+数据流向图：
+
+```
+git fetch origin：
+  GitHub ──下载──> origin/master（影子引用更新）
+                                        本地 master、工作区、未提交改动：纹丝不动
+
+git pull：
+  GitHub ──下载──> origin/master（影子引用更新）──merge──> 本地 master ──> 工作区文件被更新
+```
+
+逐项对比：
+
+| | `git fetch origin` | `git pull` |
+| --- | --- | --- |
+| 下载远程新提交 | ✅ | ✅ |
+| 更新 origin/master 影子引用 | ✅ | ✅ |
+| **修改你的工作区文件** | ❌ 绝不 | ✅ 会（可能触发合并甚至冲突） |
+| **移动你的本地分支** | ❌ 绝不 | ✅ 会（产生合并提交或快进） |
+| 风险 | **零**——纯情报收集 | 有——可能撞出冲突、多出合并提交 |
+| 一句话 | 侦察敌情 | 侦察完直接开打 |
+
+fetch 的经典三步拳（侦察 → 判断 → 动手）：
+
+```bash
+git fetch origin
+git log HEAD..origin/master --oneline   # 远程有什么新货？
+git diff HEAD origin/master             # 具体改了什么内容？
+# 看明白了、心里有底了——
+git merge origin/master                 # 这时才动手合并
+```
+
+这三步走完，最终效果与 `git pull` 完全一样，只是中间多了一个"知情检查点"。
+
+适用时机：
+
+- **fetch**：拿不准远程发生了什么、或在多人分支上想先审后合。它从不破坏任何东西——"拿不准的时候就 fetch"。
+- **pull**：确认远程改动没问题，或单人开发时一步到位最省事。
+
+记忆锚点：`fetch` 是"收快递但不拆箱"——包裹（提交）已经放到你家门口
+（origin/master），拆不拆、什么时候拆（merge 进本地分支）由你决定；
+`pull` 是"收快递并当场拆箱装好"。
+
+完整实战对照：本节的知识点在 FAQ Q6 的四步流（fetch → 双向 log → pull → push）
+里有真实事故版演示。
 
 **Q6：`git push` 被拒（fetch first）怎么办？——真实事故完整还原**
 
