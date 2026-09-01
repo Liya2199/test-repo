@@ -313,7 +313,9 @@ git ls-remote --heads origin         # 问服务器要分支列表
 
 # 基础循环
 git add <文件> / git commit -m ""    # 暂存 + 提交
-git push / git pull                  # 推 / 拉
+git fetch origin                     # 只下载远程更新，不合并、不动工作区
+git log HEAD..origin/master --oneline  # 比对：远程有而本地没有的提交
+git push / git pull                  # 推 / 拉（pull = fetch + merge）
 
 # 分支
 git switch -c <新分支>               # 建分支并切换
@@ -432,6 +434,80 @@ git merge master        # 把主干最新成果同步进分支
 在多人协作的分支上，更稳妥的习惯是先 `git fetch`，看一眼
 `git log HEAD..origin/master` 确认对方的改动，再手动 merge——
 把"自动合并"升级为"知情合并"。
+
+**Q6：`git push` 被拒（fetch first）怎么办？——真实事故完整还原**
+
+场景：本地刚提交教程更新，push 时被拒。原因：另一个"自己"正在网页上合并
+PR #5，远程 master 已经前进——**两个交汇点同时推进，git 拒绝悄悄覆盖**。
+
+```bash
+git push
+```
+```
+ ! [rejected]        master -> master (fetch first)
+error: failed to push some refs to 'https://github.com/Liya2199/test-repo.git'
+hint: Updates were rejected because the remote contains work that you do not
+hint: have locally. ...
+```
+
+被拒是 git 在保护你，**正确反应只有一条路：fetch → 查看 → 合并 → 再推**，
+绝不 `git push --force`（那会用本地历史覆盖远程，把别人——这里是你自己——
+在网页上合并的 PR 直接从历史里抹掉）。
+
+第 1 步：`git fetch origin` —— 只下载、不合并
+
+```bash
+git fetch origin
+```
+```
+From https://github.com/Liya2199/test-repo
+   f544007..86286a2  master     -> origin/master
+```
+
+fetch 把远程新提交下载到本地，更新影子引用 origin/master，
+但**完全不碰你的工作区和本地分支**——这是它与 pull 的本质区别。
+
+第 2 步：双向 diff —— 搞清两边各有什么
+
+```bash
+git log HEAD..origin/master --oneline          # 远程有、本地没有
+```
+```
+86286a2 Merge pull request #5 from Liya2199/feature/war-thunder-jets
+f615a21 Merge branch 'master' into feature/war-thunder-jets
+b6c04b2 feat(warthunder): 新增现代喷气战斗机档案（WIP）
+```
+```bash
+git log origin/master..HEAD --oneline          # 本地有、远程没有
+```
+```
+2016b19 docs(tutorial): 新增第 15 节常见误解澄清（FAQ）
+```
+
+`A..B` 读作"在 B 里、但不在 A 里"。两条一对比：双方各自前进、互不包含
+——标准的多方并行局面，需要一次合并来汇合。
+
+第 3 步：`git pull --no-edit` —— 知情合并
+
+```bash
+git pull --no-edit
+```
+```
+Merge made by the 'ort' strategy.
+ war-thunder-modern-jets.md | 36 ++++++++++++++++++++++++++++++++++++
+```
+
+远程动的是战雷新文件，本地动的是 git-tutorial.md，零交集，干净合并。
+
+第 4 步：重新 `git push` —— 一路绿灯
+
+```bash
+git push
+```
+```
+To https://github.com/Liya2199/test-repo.git
+   86286a2..69ec9ea  master -> master
+```
 
 ---
 
